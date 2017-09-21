@@ -63,6 +63,7 @@ SECRET_KEY = os.getenv('REGISTRY_SECRET_KEY', 'Make sure you create a good secre
 REGISTRY_MAPPING_PRECISION = os.getenv('REGISTRY_MAPPING_PRECISION', '500m')
 REGISTRY_MAPPING_DIST_ERR_PCT = os.getenv('REGISTRY_MAPPING_DIST_ERR_PCT', 0.025)
 REGISTRY_SEARCH_URL = os.getenv('REGISTRY_SEARCH_URL', 'http://127.0.0.1:9200')
+REGISTRYURL = os.getenv('REGISTRYURL', 'http://127.0.0.1:8000')
 REGISTRY_SEARCH_USERNAME = os.getenv('REGISTRY_SEARCH_USERNAME')
 REGISTRY_SEARCH_PASSWORD = os.getenv('REGISTRY_SEARCH_PASSWORD')
 REGISTRY_DATABASE_URL = os.getenv('REGISTRY_DATABASE_URL', 'sqlite:////tmp/registry.db')
@@ -278,7 +279,7 @@ MD_CORE_MODEL = {
         'pycsw:Publisher': 'publisher',
         'pycsw:Contributor': 'contributor',
         'pycsw:Relation': 'relation',
-        'pycsw:Links': 'links',
+        'pycsw:Links': 'links'
     }
 }
 
@@ -380,6 +381,14 @@ def parse_references(ref_string):
 
 def record_to_dict(record):
     # Encodes record title if it is not empty.
+    LOGGER.debug('record %s', record)
+    # Not all fields seem to be making it into the record object this is a hack to get
+    # some of these fields from the csw output for this layer
+    csw_url = '%s/csw?service=CSW&version=2.0.2&request=GetRecordById&id=%s&elementsetname=full&outputformat=application/json'%(REGISTRYURL,record.identifier)
+    r = requests.get(csw_url)
+    csw_json = r.json()
+    LOGGER.debug('CSW results for %s: %s', record.identifier, r.text)
+    
     if record.title:
         record.title = record.title.encode('ascii', 'ignore').decode('utf-8')
 
@@ -434,6 +443,19 @@ def record_to_dict(record):
 
     if record.source:
         record_dict['source_host'] = urlparse(record.source).netloc
+
+    if 'dc:classification' in csw_json['csw:GetRecordByIdResponse']['csw:Record']:
+        record_dict['classification'] = csw_json['csw:GetRecordByIdResponse']['csw:Record']['dc:classification']
+
+    if 'dc:releasability' in csw_json['csw:GetRecordByIdResponse']['csw:Record']:
+        record_dict['releasability'] = csw_json['csw:GetRecordByIdResponse']['csw:Record']['dc:releasability']
+
+    if 'dc:provenance' in csw_json['csw:GetRecordByIdResponse']['csw:Record']:
+        record_dict['provenance'] = csw_json['csw:GetRecordByIdResponse']['csw:Record']['dc:provenance']
+
+    if 'dc:keywords' in csw_json['csw:GetRecordByIdResponse']['csw:Record']:
+        record_dict['keywords'] = csw_json['csw:GetRecordByIdResponse']['csw:Record']['dc:keywords']
+
 
     return record_dict
 
@@ -552,7 +574,7 @@ class RegistryRepository(Repository):
 
     def insert(self, *args, **kwargs):
         record = args[0]
-        LOGGER.debug('inserting record {0}'.format(record))
+        LOGGER.debug('inserting record {0}'.format(record.__dict__))
         record.xml = record.xml.decode('utf-8')
         super(RegistryRepository, self).insert(*args)
         if self.es_status != 200:
