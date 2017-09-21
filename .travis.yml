@@ -9,8 +9,8 @@ python:
   - "3.5"
 
 env:
-  - VERSION=1.7 ES_URL="https://download.elasticsearch.org/elasticsearch/elasticsearch/" ES_DEB="elasticsearch-1.7.5.deb" REGISTRYURL="http://localhost:8000/" REGISTRY_DATABASE_URL="postgres://localhost:5432/registry"
-  - VERSION=5.1 ES_URL="https://artifacts.elastic.co/downloads/elasticsearch/" ES_DEB="elasticsearch-5.1.1.deb" REGISTRYURL="http://localhost:8000/" REGISTRY_DATABASE_URL="postgres://localhost:5432/registry"
+  - VERSION=1.7 ES_URL="https://download.elasticsearch.org/elasticsearch/elasticsearch/" ES_DEB="elasticsearch-1.7.5.deb" REGISTRYURL="http://10.240.0.10:8000/" REGISTRY_DATABASE_URL="postgres://localhost:5432/registry"
+  - VERSION=5.1 ES_URL="https://artifacts.elastic.co/downloads/elasticsearch/" ES_DEB="elasticsearch-5.1.1.deb" REGISTRYURL="http://10.240.0.10:8000/" REGISTRY_DATABASE_URL="postgres://localhost:5432/registry"
 
 addons:
   postgresql: "9.5"
